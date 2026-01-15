@@ -1,0 +1,23 @@
+{
+  "domain": "DM",
+  "required_columns": [
+    "STUDYID",
+    "DOMAIN",
+    "USUBJID",
+    "AGE",
+    "AGEU",
+    "SEX"
+  ],
+  "constraints": {
+    "AGE": {
+      "required": true,
+      "min": 0
+    },
+    "AGEU": {
+      "allowed_values": ["YEARS"]
+    },
+    "SEX": {
+      "allowed_values": ["M", "F"]
+    }
+  }
+}
