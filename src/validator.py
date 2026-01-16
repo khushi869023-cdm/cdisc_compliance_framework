@@ -1,50 +1,51 @@
-import json
 import pandas as pd
 
 
-def load_data():
-    return pd.read_csv("dm.csv")
+class ValidationError:
+    def __init__(self, row, column, message):
+        self.row = row
+        self.column = column
+        self.message = message
+
+    def __str__(self):
+        if self.row is None:
+            return f"{self.column}: {self.message}"
+        return f"Row {self.row}, Column '{self.column}': {self.message}"
 
 
-def load_rules():
-    with open("dm_rules.json", "r") as f:
-        return json.load(f)
-
-
-def validate(df, rules):
+def check_required_columns(df: pd.DataFrame, required_columns: list):
     errors = []
-
-    # required columns
-    for col in rules["required_columns"]:
+    for col in required_columns:
         if col not in df.columns:
-            errors.append(f"Missing required column: {col}")
-
-    # AGE checks
-    for i, value in df["AGE"].items():
-        if pd.isna(value):
-            errors.append(f"Row {i+1}: AGE missing")
-        elif value < rules["constraints"]["AGE"]["min"]:
-            errors.append(f"Row {i+1}: AGE < 0")
-
-    # SEX checks
-    allowed_sex = rules["constraints"]["SEX"]["allowed_values"]
-    for i, value in df["SEX"].items():
-        if value not in allowed_sex:
-            errors.append(f"Row {i+1}: Invalid SEX '{value}'")
-
+            errors.append(ValidationError(None, col, "Missing required column"))
     return errors
 
 
-def main():
-    df = load_data()
-    rules = load_rules()
-    errors = validate(df, rules)
+def check_min_value(df: pd.DataFrame, column: str, min_value: float):
+    errors = []
+    for idx, value in df[column].items():
+        if pd.isna(value):
+            errors.append(
+                ValidationError(idx + 1, column, "Missing required value")
+            )
+        elif value < min_value:
+            errors.append(
+                ValidationError(
+                    idx + 1, column, f"Value {value} < minimum {min_value}"
+                )
+            )
+    return errors
 
-    print("\nValidation Output")
-    print("-" * 30)
-    for e in errors:
-        print(e)
 
-
-if __name__ == "__main__":
-    main()
+def check_allowed_values(df: pd.DataFrame, column: str, allowed_values: list):
+    errors = []
+    for idx, value in df[column].items():
+        if pd.isna(value):
+            continue
+        if value not in allowed_values:
+            errors.append(
+                ValidationError(
+                    idx + 1, column, f"Invalid value '{value}'"
+                )
+            )
+    return errors
